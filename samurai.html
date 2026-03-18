@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZANSHIN: Duelo Samurai - Cinematic Cut</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           RESET Y UI CINEMATOGRÁFICA
+           ========================================= */
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: #000; overflow: hidden; 
+            font-family: 'Cinzel', serif; /* Fuente de cine épica */
+            color: white; user-select: none; 
+        }
+
+        /* TEMBLOR DE CÁMARA (Screen Shake) */
+        @keyframes screenShake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-10px, 10px) rotate(-1deg); }
+            40% { transform: translate(10px, -10px) rotate(1deg); }
+            60% { transform: translate(-10px, -5px) rotate(0deg); }
+            80% { transform: translate(10px, 5px) rotate(-1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .shake-active { animation: screenShake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+
+        /* VIÑETEADO (Oscurece los bordes de la lente fotográfica) */
+        body::after {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.95); pointer-events: none; z-index: 90;
+        }
+
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        
+        /* BANDAS NEGRAS (Formato Anamórfico 2.35:1) */
+        #ui-layer::before, #ui-layer::after { content: ''; position: absolute; left: 0; width: 100%; height: 15vh; background-color: #000; z-index: 100; }
+        #ui-layer::before { top: 0; } #ui-layer::after { bottom: 0; }
+
+        /* MARCAS DE ENCUADRE DE CÁMARA (Visor) */
+        .frame-mark { position: absolute; width: 20px; height: 20px; border: 1px solid rgba(255,255,255,0.3); z-index: 101; pointer-events: none; }
+        .fm-tl { top: 18vh; left: 3vw; border-right: none; border-bottom: none; }
+        .fm-tr { top: 18vh; right: 3vw; border-left: none; border-bottom: none; }
+        .fm-bl { bottom: 18vh; left: 3vw; border-right: none; border-top: none; }
+        .fm-br { bottom: 18vh; right: 3vw; border-left: none; border-top: none; }
+
+        /* UI SIN CAJAS, ESTILO TEXTO DE PELÍCULA */
+        #ui-score-board { position: absolute; top: 18vh; left: 5vw; pointer-events: auto; text-shadow: 2px 2px 10px rgba(0,0,0,1); }
+        #ui-streak { font-size: 2.2rem; font-weight: bold; color: #fff; letter-spacing: 2px; margin-bottom: 5px;}
+        #ui-record { font-size: 1rem; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+
+        #ui-weather-group { position: absolute; top: 18vh; right: 5vw; text-align: right; pointer-events: auto; text-shadow: 2px 2px 10px rgba(0,0,0,1); }
+        #ui-temp { font-size: 1.8rem; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px;}
+        #ui-desc { font-size: 1rem; color: #aaa; font-style: italic; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;}
+        #ui-loc { font-size: 0.8rem; color: #777; letter-spacing: 3px; }
+        
+        #ui-clock { position: absolute; bottom: 4vh; left: 5vw; font-size: 1.5rem; color: #555; z-index: 101; letter-spacing: 4px; }
+        #ui-timer { display: none !important; } 
+        
+        /* TEXTO CENTRAL ÉPICO */
+        #ui-message { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            font-size: 3rem; color: #fff; text-shadow: 0 0 20px rgba(0,0,0,1), 0 0 10px rgba(255,0,0,0.5); 
+            text-align: center; letter-spacing: 4px; z-index: 101;
+        }
+
+        /* =========================================
+           CÁMARA, ESCENARIO Y CLIMA
+           ========================================= */
+        #game-container { position: relative; width: 100vw; height: 100vh; background: linear-gradient(to bottom, #1e3a5f, #e08e6f); display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        #camera { position: absolute; width: 100%; height: 100%; transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1); transform-origin: center center; }
+        
+        #weather-visual { position: absolute; font-size: 25vh; opacity: 0.8; z-index: 1; transition: all 1s; pointer-events: none; filter: drop-shadow(0 0 20px rgba(255,255,255,0.4)); }
+        
+        #clouds { position: absolute; top: 5vh; left: -50vw; width: 200vw; height: 30vh; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 30"><circle cx="20" cy="20" r="10" fill="white" opacity="0.4"/><circle cx="35" cy="15" r="15" fill="white" opacity="0.4"/><circle cx="50" cy="20" r="12" fill="white" opacity="0.4"/></svg>'); background-repeat: repeat-x; background-size: 300px; animation: drift 40s linear infinite; opacity: 0; transition: opacity 2s; z-index: 2; pointer-events: none;}
+        @keyframes drift { from { transform: translateX(0); } to { transform: translateX(50vw); } }
+
+        #ground { position: absolute; width: 150%; left: -25%; background: #111; z-index: 3; transition: all 1s; border-top: 3px solid #000; }
+        #grass-layer { position: absolute; top: -15px; width: 100%; height: 15px; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" preserveAspectRatio="none"><path d="M0,20 L5,5 L10,20 L15,0 L20,20 Z" fill="%23111" stroke="%23000" stroke-width="1"/></svg>'); background-size: 30px 100%; background-repeat: repeat-x; z-index: 4; }
+
+        #splatter-layer { position: absolute; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
+        #effects-container { position: absolute; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
+        
+        #film-grain { position: absolute; width: 100%; height: 100%; z-index: 50; pointer-events: none; background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.05"/%3E%3C/svg%3E'); opacity: 0.3; transition: opacity 0.5s; }
+        .kurosawa-mode #game-container { filter: grayscale(100%) contrast(180%) brightness(0.8) sepia(20%); } 
+        .kurosawa-mode #film-grain { opacity: 0.9; mix-blend-mode: multiply; }
+
+        /* =========================================
+           SAMURÁIS CEL-SHADING
+           ========================================= */
+        .samurai { position: absolute; z-index: 5; cursor: pointer; transition: right 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: bottom center; }
+        
+        .s-head { position: absolute; border: 3px solid #000; box-shadow: inset -5px -5px 0px rgba(0,0,0,0.4); z-index: 3;}
+        .s-head::after { content: ''; position: absolute; top: -15px; left: 15%; width: 70%; height: 20px; border-bottom: 6px solid #e6b800; border-radius: 50%; box-sizing: border-box; }
+        .s-body { position: absolute; border: 3px solid #000; z-index: 1;}
+        .s-pants { position: absolute; border: 3px solid #000; z-index: 2;}
+        .s-shoulder { position: absolute; border: 3px solid #000; box-shadow: inset -3px -3px 0px rgba(0,0,0,0.4); z-index: 4; border-radius: 5px; }
+        .s-sword { position: absolute; background: #fff; border: 2px solid #000; box-shadow: 2px 2px 0px rgba(0,0,0,1); z-index: 5; transition: transform 0.1s linear; }
+        
+        #player-samurai .s-head { background: #eee; }
+        #player-samurai .s-body { background: linear-gradient(135deg, #ccc 50%, #888 50%); }
+        #player-samurai .s-pants { background: linear-gradient(135deg, #eee 50%, #aaa 50%); }
+        #player-samurai .s-shoulder { background: #999; }
+
+        #enemy-samurai .s-head { background: #e44; } 
+        #enemy-samurai .s-body { background: linear-gradient(135deg, #e44 50%, #911 50%); }
+        #enemy-samurai .s-pants { background: linear-gradient(135deg, #c22 50%, #711 50%); } 
+        #enemy-samurai .s-shoulder { background: #f55; }
+
+        /* =========================================
+           PLANOS DE CÁMARA MATEMÁTICOS
+           ========================================= */
+        /* 1. PLANO LATERAL */
+        .view-side #camera { transform: scale(1) rotateZ(0deg); } 
+        .view-side #weather-visual { top: 10vh; left: 30vw; }
+        .view-side #ground { bottom: 0; height: 30vh; transform: rotateZ(0deg); } 
+        .view-side .samurai { bottom: 30vh; width: 60px; height: 120px; }
+        
+        .view-side .s-head { width: 40px; height: 40px; top: -40px; left: 10px; } 
+        .view-side .s-body { width: 60px; height: 80px; }
+        .view-side .s-pants { width: 70px; height: 40px; top: 80px; left: -5px; } 
+        .view-side .s-shoulder { width: 25px; height: 35px; top: 5px; left: -5px; }
+        .view-side .s-sword { width: 120px; height: 6px; top: 40px; transform-origin: left center; }
+        
+        .view-side #player-samurai { left: 20vw; } .view-side #player-samurai .s-sword { left: 30px; transform: rotate(-30deg); }
+        .view-side #enemy-samurai { right: -20vw; } .view-side #enemy-samurai .s-sword { right: 30px; transform-origin: right center; }
+        .view-side #enemy-samurai.stance-low .s-sword { transform: rotate(135deg) translateX(10px); }
+        .view-side #enemy-samurai.stance-high .s-sword { transform: rotate(-60deg) translateX(10px); }
+
+        /* 2. PLANO DIAGONAL */
+        .view-diag #camera { transform: scale(1.3) rotateZ(-8deg); } 
+        .view-diag #weather-visual { top: 15vh; left: 50vw; transform: scale(2.0); }
+        .view-diag #ground { bottom: -100vh; height: 140vh; transform: rotateZ(4deg); box-shadow: 0 -20px 50px rgba(0,0,0,0.9); }
+        .view-diag .samurai { bottom: 30vh; width: 80px; height: 140px; z-index: 10; }
+        
+        .view-diag .s-head { width: 50px; height: 50px; top: -45px; left: 15px; } 
+        .view-diag .s-body { width: 80px; height: 100px; transform: skewX(-10deg); } 
+        .view-diag .s-pants { width: 90px; height: 50px; top: 90px; left: -5px; transform: skewX(-5deg); } 
+        .view-diag .s-shoulder { width: 35px; height: 40px; top: 10px; left: -10px; }
+        .view-diag .s-sword { width: 160px; height: 8px; top: 50px; transform-origin: left center; }
+
+        .view-diag #player-samurai { left: 15vw; transform: scale(1.5) translateY(4vh); z-index: 15; } 
+        .view-diag #player-samurai .s-sword { left: 40px; transform: rotate(-30deg) scaleX(0.5) skewX(20deg); }
+        
+        .view-diag #enemy-samurai { right: 20vw; transform: scale(0.75) translateY(2vh); z-index: 5; } 
+        .view-diag #enemy-samurai .s-sword { right: 40px; transform-origin: right center; }
+        .view-diag #enemy-samurai.stance-low .s-sword { transform: rotate(135deg) scaleX(0.4) translateY(10px); }
+        .view-diag #enemy-samurai.stance-high .s-sword { transform: rotate(-70deg) scaleX(0.4) translateY(-10px); }
+
+        /* 3. PLANO CENITAL */
+        .view-top #camera { transform: scale(1.1); } 
+        .view-top #weather-visual { top: 50vh; left: 50vw; transform: translate(-50%, -50%) scale(3.5); opacity: 0.15; }
+        .view-top #ground { bottom: 0; height: 100vh; background: #1a1a1a; transform: rotateZ(0deg); border-top:none; } 
+        .view-top #grass-layer { display: none; } 
+        .view-top .samurai { bottom: 50vh; width: 100px; height: 60px; }
+        
+        .view-top .s-head { width: 45px; height: 45px; border-radius: 50%; top: -15px; left: 25px; z-index: 5; } 
+        .view-top .s-head::after { display: none; }
+        .view-top .s-body { width: 100px; height: 50px; border-radius: 20px; top: 10px; z-index: 1; } 
+        .view-top .s-pants { width: 100px; height: 30px; border-radius: 10px; top: 40px; z-index: 2; }
+        .view-top .s-shoulder { width: 40px; height: 40px; border-radius: 50%; top: 5px; left: -5px; z-index: 4; }
+        .view-top .s-sword { width: 140px; height: 5px; top: 25px; z-index: 6; transform-origin: left center; }
+
+        .view-top #player-samurai { left: 30vw; } .view-top #player-samurai .s-sword { left: 50px; transform: rotate(-10deg); }
+        .view-top #enemy-samurai { right: -20vw; } .view-top #enemy-samurai .s-sword { right: 50px; transform-origin: right center; }
+        .view-top #enemy-samurai.stance-low .s-sword { transform: rotate(160deg); }
+        .view-top #enemy-samurai.stance-high .s-sword { transform: rotate(-90deg); }
+
+        /* =========================================
+           ANIMACIONES: ATAQUE Y MUERTE PERFECTA
+           ========================================= */
+        .s-sword::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; filter: blur(4px); opacity: 0; transform-origin: inherit; transition: opacity 0.1s;
+        }
+        
+        #player-samurai.attack { transform: translateX(10vw) scale(1.1); z-index: 10; transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1); }
+        .view-diag #player-samurai.attack { transform: scale(1.5) translate(8vw, 4vh); }
+        
+        #player-samurai.attack .s-sword { transform: rotate(10deg) scaleX(1.3) !important; box-shadow: 0 0 15px #fff; border-color: #fff;}
+        .view-diag #player-samurai.attack .s-sword { transform: rotate(15deg) scaleX(1.3) !important; }
+        #player-samurai.attack .s-sword::after { opacity: 0.8; transform: scaleY(3); }
+
+        /* CAÍDAS PERFECTAS */
+        .view-side #enemy-samurai.dead { transform-origin: bottom right; transform: rotate(90deg) scaleX(-1) !important; opacity: 0.5; pointer-events: none; }
+        .view-side #player-samurai.dead { transform-origin: bottom left; transform: rotate(-90deg) !important; opacity: 0.5; pointer-events: none; }
+        
+        .view-diag #enemy-samurai.dead { transform-origin: bottom right; transform: scale(0.75) translate(20px, 2vh) rotate(90deg) scaleX(-1) !important; opacity: 0.5; pointer-events: none; }
+        .view-diag #player-samurai.dead { transform-origin: bottom left; transform: scale(1.5) translate(-10px, 4vh) rotate(-90deg) !important; opacity: 0.5; pointer-events: none; }
+
+        .view-top #enemy-samurai.dead { transform-origin: center center; transform: translateY(20px) rotate(90deg) scaleX(-1) !important; opacity: 0.5; pointer-events: none; }
+        .view-top #player-samurai.dead { transform-origin: center center; transform: translateY(20px) rotate(-90deg) !important; opacity: 0.5; pointer-events: none; }
+
+        .blood-particle { position: absolute; background-color: #b00; border-radius: 50%; opacity: 0.9; animation: bloodSpray 0.7s ease-out forwards; border: 1px solid #000; }
+        @keyframes bloodSpray { 0% { opacity: 0.9; transform: translate(0, 0) scale(1.0); } 100% { transform: translate(var(--dx), var(--dy)) scale(0.1); opacity: 0; } }
+
+        #start-screen { position: absolute; top:0; left:0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 200; display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer; letter-spacing: 4px; }
+    </style>
+</head>
+<body>
+    <div id="start-screen">HAZ CLIC PARA ENTRAR AL DUELO</div>
+    <div id="game-container" class="view-side">
+        <div id="camera">
+            <div id="clouds"></div> 
+            <div id="weather-visual">🌑</div>
+            
+            <div id="ground"><div id="grass-layer"></div></div> 
+            
+            <div id="splatter-layer"></div>
+            <div id="effects-container"></div>
+            
+            <div id="player-samurai" class="samurai">
+                <div class="s-sword"></div><div class="s-shoulder"></div><div class="s-body"></div><div class="s-pants"></div><div class="s-head"></div>
+            </div>
+            
+            <div id="enemy-samurai" class="samurai">
+                <div id="enemy-sword" class="s-sword"></div>
+                <div class="s-shoulder"></div><div class="s-body"></div><div class="s-pants"></div><div class="s-head"></div>
+            </div>
+            <div id="film-grain"></div>
+        </div>
+
+        <div id="ui-layer">
+
+
+            <div id="ui-score-board">
+                <div id="ui-streak">MUERTES: 0</div>
+                <div id="ui-record">Mejor Racha: 0</div>
+            </div>
+            <div id="ui-weather-group">
+                <div id="ui-temp">--°C</div>
+                <div id="ui-desc">Buscando el viento...</div>
+                <div id="ui-loc">TU CIUDAD, ES</div>
+                <div id="ui-coords">Lat: 41.38 | Lon: 2.17</div>
+            </div>
+            <div id="ui-clock">--:--:--</div>
+            <div id="ui-timer">0000</div>
+            <div id="ui-message">PREPÁRATE PARA EL DUELO</div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

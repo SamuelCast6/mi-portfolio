@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal CV | Samuel Cast</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #050505;
+            --card-bg: #0a0a0a;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --accent: #10b981; 
+            --border: #1e293b;
+        }
+
+        body {
+            margin: 0; padding: 0; background-color: var(--bg); color: var(--text-main);
+            font-family: 'Fira Code', monospace; line-height: 1.6; overflow-x: hidden;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 6vh 4vw; position: relative; z-index: 10; }
+
+        /* =========================================
+           SISTEMA SOLAR ASCII 3D (DIAGONAL)
+           ========================================= */
+        #ascii-orrery {
+            position: fixed;
+            bottom: -5%;
+            right: -2%;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            line-height: 10px;
+            color: var(--accent);
+            opacity: 0.18; 
+            pointer-events: none;
+            z-index: 1;
+            white-space: pre;
+        }
+
+        /* =========================================
+           CABECERA Y TYPING EFFECT
+           ========================================= */
+        header { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            border-bottom: 1px dashed var(--border); padding-bottom: 30px; margin-bottom: 40px;
+        }
+
+        .typewriter-text {
+            font-size: 2.2rem; font-weight: 600; color: #fff; margin: 0;
+            border-right: 3px solid var(--accent); white-space: nowrap; overflow: hidden;
+        }
+        
+        .typewriter-sub {
+            font-size: 1rem; color: var(--text-muted); margin-top: 5px;
+            white-space: nowrap; overflow: hidden; border-right: 2px solid transparent;
+        }
+
+        @keyframes blinkCursor { from, to { border-color: transparent } 50% { border-color: var(--accent); } }
+
+        /* WIDGET CLIMA */
+        #weather-widget {
+            display: flex; align-items: center; gap: 15px; cursor: pointer; padding: 12px;
+            background: rgba(10, 10, 10, 0.8); border: 1px solid var(--border);
+            border-radius: 4px; transition: all 0.2s; user-select: none; backdrop-filter: blur(5px);
+        }
+        #weather-widget:hover { border-color: var(--accent); box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); }
+        #w-icon { font-size: 2.2rem; }
+        .w-info { display: flex; flex-direction: column; text-align: right; }
+        .w-temp { font-size: 1.1rem; font-weight: 600; color: #fff; }
+        .w-city { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; }
+
+        /* =========================================
+           LAYOUT Y TARJETAS
+           ========================================= */
+        .grid-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; }
+        @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } header { flex-direction: column-reverse; gap: 20px; } }
+
+        h3 { font-size: 1rem; color: var(--accent); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
+        h3::before { content: '>> '; }
+        
+        .card { 
+            background: rgba(10, 10, 10, 0.7); border: 1px solid var(--border);
+            border-radius: 4px; padding: 25px; margin-bottom: 20px; backdrop-filter: blur(4px);
+        }
+        .card h4 { font-family: 'Inter', sans-serif; font-size: 1.2rem; color: #fff; margin: 0 0 10px 0; }
+        .card p { font-family: 'Inter', sans-serif; color: #94a3b8; font-size: 0.95rem; margin: 0 0 15px 0; }
+        
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag { font-size: 0.7rem; color: var(--text-main); background: #1e293b; padding: 4px 10px; border-radius: 2px; }
+
+        /* BOTÓN GITHUB */
+        .btn-github {
+            display: inline-block; color: var(--accent); text-decoration: none; font-size: 0.8rem; 
+            border: 1px solid var(--accent); padding: 6px 12px; border-radius: 2px; transition: all 0.3s;
+        }
+        .btn-github:hover { background: var(--accent); color: #000 !important; box-shadow: 0 0 12px var(--accent); }
+
+        /* MODALES Y EFECTOS */
+        #weather-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--accent); padding: 30px; width: 300px; position: relative; }
+        .close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; color: var(--text-muted); font-size: 1.5rem; }
+        .modal-detail { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; font-size: 0.85rem; }
+
+        #slash-effect { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; pointer-events: none; display: none; }
+        #slash-line { position: absolute; top: 50%; left: -20%; width: 140%; height: 2px; background: white; box-shadow: 0 0 25px white; transform: rotate(-15deg) scaleX(0); transform-origin: left center; }
+        @keyframes slashCut { 0% { transform: rotate(-15deg) scaleX(0); } 50% { transform: rotate(-15deg) scaleX(1); opacity: 1; } 100% { transform: rotate(-15deg) scaleX(1); opacity: 0; height: 60px; background: white; } }
+        @keyframes bgFlash { 0% { background: transparent; } 40% { background: white; } 45% { background: black; } 100% { background: black; } }
+
+    </style>
+</head>
+<body>
+
+    <pre id="ascii-orrery"></pre>
+
+    <div id="slash-effect"><div id="slash-line"></div></div>
+
+    <div id="weather-modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">×</span>
+            <h3 style="margin-top:0; color: var(--accent);">[WEATHER_SYSTEM]</h3>
+            <div style="text-align:center; font-size: 3.5rem; margin-bottom: 20px;" id="modal-icon">☀️</div>
+            <div class="modal-detail"><span>TEMP:</span> <strong id="modal-temp">--°C</strong></div>
+            <div class="modal-detail"><span>HUMIDITY:</span> <strong id="modal-hum">--%</strong></div>
+            <div class="modal-detail"><span>WIND:</span> <strong id="modal-wind">-- km/h</strong></div>
+            <div class="modal-detail"><span>STATUS:</span> <strong id="modal-desc">--</strong></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <div id="name-typing" class="typewriter-text"></div>
+                <div id="sub-typing" class="typewriter-sub"></div>
+            </div>
+            <div id="weather-widget" onclick="openModal()">
+                <div class="w-info">
+                    <span class="w-city">MADRID, ES</span>
+                    <span class="w-temp" id="widget-temp">--°C</span>
+                </div>
+                <div id="w-icon">☀️</div>
+            </div>
+        </header>
+
+        <div class="grid-layout">
+            <div class="column-left">
+                <section id="proyectos">
+                    <h3>Proyectos</h3>
+                    
+                    <div class="card">
+                        <h4>Protocolo P2P de Proximidad</h4>
+                        <p>Ingeniería inversa de conceptos de interacción asíncrona mediante Web APIs experimentales.</p>
+                        <div class="tags" style="margin-bottom: 15px;">
+                            <span class="tag">JS</span> <span class="tag">WebBluetooth</span> <span class="tag">Node.js</span>
+                        </div>
+                        <a href="https://github.com/SamuelCast6/Peer-to-Peer-Protocol.git" target="_blank" class="btn-github">
+                            VIEW_SOURCE_GITHUB >>
+                        </a>
+                    </div>
+
+                    <div class="card" style="opacity: 0.5;">
+                        <h4>[EN DESARROLLO] Detector Biométrico</h4>
+                        <p>Pipeline de visión computacional para clasificación de microexpresiones. Repositorio privado.</p>
+                        <div class="tags"><span class="tag">Python</span> <span class="tag">TensorFlow</span></div>
+                    </div>
+
+                    <div class="card" style="opacity: 0.5;">
+                        <h4>[EN DESARROLLO] Cloud Architecture</h4>
+                        <p>Sistema de orquestación de nodos personales cifrados. Documentación en proceso.</p>
+                        <div class="tags"><span class="tag">Linux</span> <span class="tag">Docker</span></div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="column-right">
+                <section id="bio">
+                    <h3>Init()</h3>
+                    <div class="card">
+                        <p>Data Scientist & Systems Architect. Especializado en extraer patrones del ruido y construir infraestructuras resilientes.</p>
+                    </div>
+                </section>
+                <section id="educacion">
+                    <h3>Educación</h3>
+                    <div class="card">
+                        <h4>Grado en Ciencia de Datos</h4>
+                        <p>Universidad de Madrid</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); font-family: 'Fira Code';">[2018 - 2022]</p>
+                    </div>
+                </section>
+                <section id="skills">
+                    <h3>Stack</h3>
+                    <div class="card">
+                        <div class="tags">
+                            <span class="tag">Python</span> <span class="tag">C++</span> <span class="tag">SQL</span>
+                            <span class="tag">Docker</span> <span class="tag">AWS</span> <span class="tag">Git</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. EFECTO ESCRITURA
+        const nameText = "SAMUEL CAST";
+        const subText = "> Data Scientist & Systems Architect";
+        const nameEl = document.getElementById('name-typing');
+        const subEl = document.getElementById('sub-typing');
+        let i = 0, j = 0;
+
+        function typeName() {
+            if (i < nameText.length) {
+                nameEl.innerHTML += nameText.charAt(i); i++;
+                setTimeout(typeName, 100);
+            } else {
+                nameEl.style.borderRight = "none";
+                subEl.style.borderRight = "3px solid var(--accent)";
+                subEl.style.animation = "blinkCursor 0.75s step-end infinite";
+                setTimeout(typeSub, 500);
+            }
+        }
+        function typeSub() {
+            if (j < subText.length) {
+                subEl.innerHTML += subText.charAt(j); j++;
+                setTimeout(typeSub, 50);
+            }
+        }
+
+        // 2. SISTEMA SOLAR DIAGONAL
+        const canvas = document.getElementById('ascii-orrery');
+        const width = 120, height = 60;
+        let time = 0;
+
+        function drawSphere(b, z, cx, cz, cy, r, rot, charset, tilt) {
+            let cosT = Math.cos(tilt), sinT = Math.sin(tilt);
+            for (let lat = 0; lat < Math.PI; lat += 0.3) {
+                for (let lon = 0; lon < 2 * Math.PI; lon += 0.15) {
+                    let xL = Math.sin(lat) * Math.cos(lon + rot);
+                    let yL = Math.sin(lat) * Math.sin(lon + rot);
+                    let zL = Math.cos(lat);
+                    let xW = xL * r + cx, yW = yL * r + cy, zW = zL * r + cz;
+                    let yFinal = yW * cosT - zW * sinT;
+                    let zFinal = yW * sinT + zW * cosT;
+                    let depth = zFinal + 150, ooz = 1 / depth;
+                    let xp = Math.floor(width / 2 + xW * 1.8 * 40 * ooz);
+                    let yp = Math.floor(height / 2 + yFinal * 40 * ooz);
+                    let idx = xp + width * yp;
+                    let lum = Math.floor((zL + 1) / 2 * (charset.length - 1));
+                    if (xp >= 0 && xp < width && yp >= 0 && yp < height) {
+                        if (ooz > z[idx]) { z[idx] = ooz; b[idx] = charset[lum]; }
+                    }
+                }
+            }
+        }
+
+        function renderOrrery() {
+            let b = Array(width * height).fill(' '), z = Array(width * height).fill(0);
+            const tilt = 0.8;
+            drawSphere(b, z, 0, 0, 0, 9, time * 0.3, "@#$* ", tilt);
+            drawSphere(b, z, Math.cos(time*1.5)*22, Math.sin(time*1.5)*22, 0, 3, time*2, "=+;: ", tilt);
+            drawSphere(b, z, Math.cos(time*0.7)*40, Math.sin(time*0.7)*40, Math.sin(time*0.5)*2, 5, time, "o*!. ", tilt);
+            drawSphere(b, z, Math.cos(time*0.3)*65, Math.sin(time*0.3)*65, 0, 7, time*0.5, "S8%# ", tilt);
+            let out = "";
+            for (let k = 0; k < width * height; k++) out += (k % width === width - 1) ? "\n" : b[k];
+            canvas.innerHTML = out;
+            time += 0.012;
+            requestAnimationFrame(renderOrrery);
+        }
+
+        // 3. CLIMA Y EVENTOS
+        async function fetchWeather() {
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=40.41&longitude=-3.70&current_weather=true&hourly=relativehumidity_2m`);
+                const data = await res.json();
+                const temp = data.current_weather.temperature;
+                document.getElementById('widget-temp').innerText = `${temp}°C`;
+                document.getElementById('modal-temp').innerText = `${temp}°C`;
+                document.getElementById('modal-wind').innerText = `${data.current_weather.windspeed} km/h`;
+                document.getElementById('modal-desc').innerText = data.current_weather.weathercode < 3 ? 'CLEAR' : 'CLOUDY';
+            } catch (e) {}
+        }
+
+        function openModal() { document.getElementById('weather-modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('weather-modal').style.display = 'none'; }
+
+        // 4. HUEVO DE PASCUA
+        const icon = document.getElementById('w-icon');
+        let clicks = 0, timer;
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation(); clicks++;
+            icon.style.transform = `scale(${1 + clicks*0.1})`;
+            if (clicks >= 3) {
+                document.getElementById('slash-effect').style.display = 'block';
+                document.getElementById('slash-effect').style.animation = 'bgFlash 1.5s forwards';
+                document.getElementById('slash-line').style.animation = 'slashCut 0.4s ease-out forwards';
+                setTimeout(() => { window.location.href = 'samurai.html'; }, 1000);
+            }
+            clearTimeout(timer); timer = setTimeout(() => { clicks = 0; icon.style.transform = 'scale(1)'; }, 2000);
+        });
+
+        window.onload = () => { typeName(); fetchWeather(); renderOrrery(); };
+    </script>
+</body>
+</html>
